@@ -1,34 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
+  /**
+   * POST /users - Crea o actualiza un usuario
+   * Usa un objeto del usuario autenticado (desde Supabase Auth)
+   * Se invoca automáticamente tras login, pero también disponible manualmente
+   */
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async upsertFromAuth(@Body() authUser: any) {
+    return this.usersService.upsertFromAuth(authUser);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  /**
+   * GET /users/:user_id - Obtiene los datos de un usuario
+   */
+  @Get(':user_id')
+  async findOne(@Param('user_id') user_id: string) {
+    return this.usersService.findByUserId(user_id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  /**
+   * PATCH /users/:user_id/role - Cambia el role de un usuario
+   * Ejemplo: { "role": "stakeholder" }
+   * Roles disponibles: 'free', 'community', 'stakeholder', 'admin'
+   */
+  @Patch(':user_id/role')
+  async updateRole(@Param('user_id') user_id: string, @Body() body: { role: string }) {
+    return this.usersService.updateRole(user_id, body.role);
   }
 }
